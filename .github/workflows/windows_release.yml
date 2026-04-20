@@ -68,28 +68,26 @@ jobs:
         mix assets.deploy 
 
     - name: Build Desktop App
-      shell: pwsh
+      continue-on-error: true
       run: |
         $env:MIX_ENV = "prod"
-        # We run the build and catch the error so the workflow continues
-        try {
-            mix ex_tauri.build
-        } catch {
-            Write-Host "Caught expected ex_tauri copy error, continuing..."
-        }
+        mix ex_tauri.build
 
     - name: Package Release
       shell: pwsh
+      # Ensure the directory exists before we try to zip it
       run: |
-        # List files just to be 100% sure of the name in the logs
-        Get-ChildItem -Path "burrito_out/"
-        
-        # Zip the actual binary found in burrito_out
-        # Use the underscore name: desktop_x86_64-pc-windows-msvc.exe
-        Compress-Archive -Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe" -DestinationPath "desktop-windows-x64.zip"
+        if (Test-Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe") {
+            Write-Host "Binary found! Zipping..."
+            Compress-Archive -Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe" -DestinationPath "desktop-windows-x64.zip"
+        } else {
+            Write-Error "Binary was not found in burrito_out. Build likely failed before wrapping."
+            exit 1
+        }
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
+      # if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       with:
         # Ensure the tag matches your triggering event
         files: desktop-windows-x64.zip
