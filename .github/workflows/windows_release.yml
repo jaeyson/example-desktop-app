@@ -36,6 +36,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mix-
 
+    - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          src-tauri/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
     - name: Install Dependencies
       run: |
         mix local.rebar --force
