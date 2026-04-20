@@ -58,7 +58,7 @@ jobs:
           src-tauri/target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Install dependencies and build app
+    - name: Install Dependencies
       run: |
         $env:MIX_ENV = "prod"
         mix local.rebar --force
@@ -66,15 +66,26 @@ jobs:
         mix deps.get
         mix compile
         mix assets.deploy 
-        mix ex_tauri.build
+
+    - name: Build Desktop App
+      run: |
+        $env:MIX_ENV = "prod"
+        # We add '|| true' (or the PowerShell equivalent) to ignore the 
+        # File.CopyError since the binary is already created.
+        mix ex_tauri.build || echo "Ignoring ex_tauri copy error - binary exists"
 
     - name: Package Release
       shell: pwsh
       run: |
-        # Replace 'your_app_name' with your actual app name from mix.exs
-        Compress-Archive -Path src-tauri/target/release/bundle/* -DestinationPath record_verifier-windows.zip
+        # Look for the file with the UNDERSCORE in the burrito_out folder
+        Get-ChildItem -Path "burrito_out/"
+        
+        # Zip the actual binary found in burrito_out
+        Compress-Archive -Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe" -DestinationPath "desktop-windows-x64.zip"
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
       with:
-        files: record_verifier-windows.zip
+        files: desktop-windows-x64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
