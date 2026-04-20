@@ -34,7 +34,7 @@ jobs:
 
     - name: Install XZ and 7zip
       run: |
-        choco install xz 7zip -y
+        choco install 7zip -y
 
     - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
       with:
