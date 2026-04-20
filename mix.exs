@@ -20,8 +20,8 @@ defmodule Hello.MixProject do
               # macos: [os: :darwin, cpu: :aarch64],
               # linux: [os: :linux, cpu: :x86_64],
               # windows: [os: :windows, cpu: :x86_64]
-              "aarch64-apple-darwin": [os: :darwin, cpu: :aarch64],
-              "x86_64-unknown-linux-musl": [os: :linux, cpu: :x86_64, libc: :musl],
+              # "aarch64-apple-darwin": [os: :darwin, cpu: :aarch64],
+              # "x86_64-unknown-linux-musl": [os: :linux, cpu: :x86_64, libc: :musl],
               "x86_64-pc-windows-msvc": [os: :windows, cpu: :x86_64]
             ]
           ]
