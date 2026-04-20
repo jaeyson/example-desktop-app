@@ -1,9 +1,9 @@
 name: Windows Release Build
 
 on:
-  # push:
-  #   tags:
-  #     - 'v*' # Triggers when you push a tag like v1.0.0
+  push:
+    tags:
+      - 'v*' # Triggers when you push a tag like v1.0.0
   push:
     branches: ["main"]
   pull_request:
@@ -87,7 +87,7 @@ jobs:
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
-      # if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       with:
         # Ensure the tag matches your triggering event
         files: desktop-windows-x64.zip
