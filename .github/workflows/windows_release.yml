@@ -27,6 +27,13 @@ jobs:
         elixir-version: '1.17'
         otp-version: '27'
 
+    - name: Install Build Dependencies
+      run: |
+        choco install zig --version 0.15.0
+        choco install 7zip
+        # Ensure zig is in the path for the next steps
+        echo "C:\ProgramData\chocolatey\bin" >> $GITHUB_PATH
+
     - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
       with:
         path: |
@@ -46,14 +53,12 @@ jobs:
           src-tauri/target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Install Dependencies
+    - name: Install dependencies and build app
       run: |
+        $env:MIX_ENV = "prod"
         mix local.rebar --force
         mix local.hex --force
         mix deps.get
-
-    - name: Compile and Build Release
-      run: |
         mix ex_tauri.build
 
     - name: Package Release
