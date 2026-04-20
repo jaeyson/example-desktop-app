@@ -68,24 +68,30 @@ jobs:
         mix assets.deploy 
 
     - name: Build Desktop App
+      shell: pwsh
       run: |
         $env:MIX_ENV = "prod"
-        # We add '|| true' (or the PowerShell equivalent) to ignore the 
-        # File.CopyError since the binary is already created.
-        mix ex_tauri.build || echo "Ignoring ex_tauri copy error - binary exists"
+        # We run the build and catch the error so the workflow continues
+        try {
+            mix ex_tauri.build
+        } catch {
+            Write-Host "Caught expected ex_tauri copy error, continuing..."
+        }
 
     - name: Package Release
       shell: pwsh
       run: |
-        # Look for the file with the UNDERSCORE in the burrito_out folder
+        # List files just to be 100% sure of the name in the logs
         Get-ChildItem -Path "burrito_out/"
         
         # Zip the actual binary found in burrito_out
+        # Use the underscore name: desktop_x86_64-pc-windows-msvc.exe
         Compress-Archive -Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe" -DestinationPath "desktop-windows-x64.zip"
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
       with:
+        # Ensure the tag matches your triggering event
         files: desktop-windows-x64.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
