@@ -1,13 +1,9 @@
 name: Windows Release Build
 
 on:
-  # push:
-  #   tags:
-  #     - 'v*' # Triggers when you push a tag like v1.0.0
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    tags:
+      - 'v*' # Triggers when you push a tag like v1.0.0
 
 jobs:
   build:
@@ -24,8 +20,20 @@ jobs:
     - name: Set up Elixir
       uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93
       with:
-        elixir-version: '1.19'
-        otp-version: '28'
+        elixir-version: '1.17'
+        otp-version: '27'
+
+    - name: Install Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.15.2
+
+    - name: Install XZ and 7zip
+      shell: powershell
+      run: |
+        choco install 7zip -y
+        ridk exec pacman -S --noconfirm xz
+        echo "C:\msys64\usr\bin" >> $env:GITHUB_PATH
 
     - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
       with:
@@ -48,21 +56,36 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        $env:MIX_ENV = "prod"
         mix local.rebar --force
         mix local.hex --force
         mix deps.get
+        mix compile
+        mix assets.deploy 
 
-    - name: Compile and Build Release
+    - name: Build Desktop App
+      continue-on-error: true
       run: |
+        $env:MIX_ENV = "prod"
         mix ex_tauri.build
 
     - name: Package Release
       shell: pwsh
+      # Ensure the directory exists before we try to zip it
       run: |
-        # Replace 'your_app_name' with your actual app name from mix.exs
-        Compress-Archive -Path src-tauri/target/release/bundle/* -DestinationPath record_verifier-windows.zip
+        if (Test-Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe") {
+            Write-Host "Binary found! Zipping..."
+            Compress-Archive -Path "burrito_out/desktop_x86_64-pc-windows-msvc.exe" -DestinationPath "desktop-windows-x64.zip"
+        } else {
+            Write-Error "Binary was not found in burrito_out. Build likely failed before wrapping."
+            exit 1
+        }
 
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v1
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       with:
-        files: record_verifier-windows.zip
+        # Ensure the tag matches your triggering event
+        files: desktop-windows-x64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
